@@ -31,4 +31,13 @@ terraform plan
 terraform apply
 ```
 
+# Replacing the variables in the file
+
+1. In order to define a new name for your cluster, change the `my-cluster` to the name you want for your cluster.
+2. In order to be able to save your `tf state file`, you should have a bucket named `infrastructure-my-cluster` in the related `aws region`.
+3. If you want to also create the bucket through terraform, follow the following url.
+https://dev.to/shihanng/managing-s3-bucket-for-terraform-backend-in-the-same-configuration-2c6c
+4. In order to be able to have a service account for your deployments, look at the `aws_node` IAM role. The service account
+name is `housing-api` for the `default` cluster.
+
 

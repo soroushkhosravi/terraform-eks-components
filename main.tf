@@ -13,7 +13,7 @@ terraform {
   }
   # We define a backend for the terraform state file. This saves all the changes related to the AWS elements.
   backend "s3" {
-    bucket = "bucketforstateforsoroush"
+    bucket = "infrastructure-my-cluster"
     key    = "statefile"
     region = "us-west-2"
   }
@@ -34,11 +34,6 @@ provider "kubernetes" {
     args        = ["eks", "get-token", "--cluster-name", aws_eks_cluster.example.name]
     command     = "aws"
   }
-}
-
-# The data block gives us access to the EKS cluster.
-data "aws_eks_cluster_auth" "example" {
-  name = "my-cluster"
 }
 
 # We create all the VPC and subnets and route tables through this tech stack.
@@ -77,7 +72,7 @@ resource "aws_iam_role_policy_attachment" "eks-policy-attachment" {
   ]
 }
 
-# We create aan EKS cluster here.
+# We create an EKS cluster here.
 resource "aws_eks_cluster" "example" {
   name     = "my-cluster"
   role_arn = aws_iam_role.myAmazonEKSClusterRole.arn
@@ -163,63 +158,6 @@ resource "aws_eks_node_group" "my-nodegroup" {
   ]
 }
 
-# We define an ECR repository to push the docker images to it.
-resource "aws_ecr_repository" "soroushRepo" {
-  name                 = "soroushreposotory"
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-}
-
-# We create a subnet group including all the public subnets of the VPC we created.
-resource "aws_db_subnet_group" "first" {
-  name       = "first"
-  subnet_ids = slice(split(",", aws_cloudformation_stack.my-eks-vpc-stack.outputs.SubnetIds), 0, 2)
-}
-
-# We create an RDS instance.
-resource "aws_db_instance" "first" {
-  identifier           = "first"
-  allocated_storage    = 10
-  db_subnet_group_name = aws_db_subnet_group.first.id
-  engine               = "postgres"
-  engine_version       = "12"
-  instance_class       = "db.t2.small"
-  db_name              = "firstsoroushdb"
-  username             = "soroush"
-  password             = "password"
-  port                 = 5432
-  publicly_accessible  = true
-  skip_final_snapshot  = true
-
-  vpc_security_group_ids = ["${aws_security_group._.id}"]
-}
-
-# We create a security group for the RDS instance.
-resource "aws_security_group" "_" {
-  name        = "first-sg"
-  vpc_id      = aws_cloudformation_stack.my-eks-vpc-stack.outputs.VpcId
-  description = "RDS (terraform-managed)"
-
-  # Only MySQL in
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Allow all outbound traffic.
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 # We create a tls certificate for the cluster.
 data "tls_certificate" "cluster" {
   url = aws_eks_cluster.example.identity.0.oidc.0.issuer
@@ -246,7 +184,7 @@ resource "aws_iam_role" "aws_node" {
         "Action" : "sts:AssumeRoleWithWebIdentity",
         "Condition" : {
           "StringEquals" : {
-            format("%s:%s", replace(aws_iam_openid_connect_provider.cluster.url, "https://", ""), "sub") : "system:serviceaccount:default:my-service-account"
+            format("%s:%s", replace(aws_iam_openid_connect_provider.cluster.url, "https://", ""), "sub") : "system:serviceaccount:default:housing-api"
           }
         }
       }
