@@ -137,7 +137,7 @@ resource "aws_eks_node_group" "my-nodegroup" {
   cluster_name    = aws_eks_cluster.example.name
   node_group_name = "my-nodegroup"
   node_role_arn   = aws_iam_role.myAmazonEKSNodeRole.arn
-  subnet_ids      = split(",", aws_cloudformation_stack.my-eks-vpc-stack.outputs.SubnetIds)
+  subnet_ids      = slice(split(",", aws_cloudformation_stack.my-eks-vpc-stack.outputs.SubnetIds), 0, 2)
 
   scaling_config {
     desired_size = 2
