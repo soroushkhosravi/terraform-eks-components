@@ -38,8 +38,11 @@ provider "kubernetes" {
 
 # We create all the VPC and subnets and route tables through this tech stack.
 resource "aws_cloudformation_stack" "my-eks-vpc-stack" {
-  name         = "my-eks-vpc-stack"
-  template_url = "https://s3.us-west-2.amazonaws.com/amazon-eks/cloudformation/2020-10-29/amazon-eks-vpc-private-subnets.yaml"
+  name = "my-eks-vpc-stack"
+  # The following template url adds private subnets, related route tables for them and
+  # some NAT gateways which is expensive and not good for testing.
+  # template_url = "https://s3.us-west-2.amazonaws.com/amazon-eks/cloudformation/2020-10-29/amazon-eks-vpc-private-subnets.yaml"
+  template_body = file("${path.module}/stack.yml")
   on_failure   = "DELETE"
 }
 
