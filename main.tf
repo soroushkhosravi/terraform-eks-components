@@ -263,3 +263,24 @@ resource "aws_iam_role_policy_attachment" "AmazonEKSLoadBalancerControllerRoleAt
 resource "kubectl_manifest" "test" {
   yaml_body = file("${path.module}/kubectls/aws-load-balancer-controller-service-account.yaml")
 }
+
+resource "kubectl_manifest" "certmanager" {
+  yaml_body = file("${path.module}/kubectls/certmanager.yaml")
+    depends_on = [
+    kubectl_manifest.test
+  ]
+}
+
+resource "kubectl_manifest" "v2_4_4_full" {
+  yaml_body = file("${path.module}/kubectls/v2_4_4_full.yaml")
+    depends_on = [
+    kubectl_manifest.certmanager
+  ]
+}
+
+resource "kubectl_manifest" "v2_4_4_ingclass" {
+  yaml_body = file("${path.module}/kubectls/v2_4_4_ingclass.yaml")
+    depends_on = [
+    kubectl_manifest.v2_4_4_full
+  ]
+}
