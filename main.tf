@@ -6,10 +6,6 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 4.16"
     }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = ">= 2.4"
-    }
   }
   # We define a backend for the terraform state file. This saves all the changes related to the AWS elements.
   backend "s3" {
@@ -23,17 +19,6 @@ terraform {
 provider "aws" {
   # We define the region of aws here.
   region = "us-west-2"
-}
-
-provider "kubernetes" {
-  # We define which cluster we want to connect to.
-  host                   = aws_eks_cluster.example.endpoint
-  cluster_ca_certificate = base64decode(aws_eks_cluster.example.certificate_authority[0].data)
-  exec {
-    api_version = "client.authentication.k8s.io/v1alpha1"
-    args        = ["eks", "get-token", "--cluster-name", aws_eks_cluster.example.name]
-    command     = "aws"
-  }
 }
 
 # We create all the VPC and subnets and route tables through this tech stack.
