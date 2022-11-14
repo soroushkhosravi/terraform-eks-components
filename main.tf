@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 4.16"
     }
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = ">= 1.7.0"
+    }
   }
   # We define a backend for the terraform state file. This saves all the changes related to the AWS elements.
   backend "s3" {
@@ -14,6 +18,16 @@ terraform {
     region = "us-west-2"
   }
   required_version = ">= 1.2.0"
+}
+
+provider "kubectl" {
+  host                   = aws_eks_cluster.example.endpoint
+  cluster_ca_certificate = base64decode(aws_eks_cluster.example.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.cluster-auth.token
+}
+
+data "aws_eks_cluster_auth" "cluster-auth" {
+  name = aws_eks_cluster.example.name
 }
 
 provider "aws" {
@@ -28,7 +42,7 @@ resource "aws_cloudformation_stack" "my-eks-vpc-stack" {
   # some NAT gateways which is expensive and not good for testing.
   # template_url = "https://s3.us-west-2.amazonaws.com/amazon-eks/cloudformation/2020-10-29/amazon-eks-vpc-private-subnets.yaml"
   template_body = file("${path.module}/stack.yml")
-  on_failure   = "DELETE"
+  on_failure    = "DELETE"
 }
 
 # We define an IAM role for our EKS cluster.
@@ -203,4 +217,49 @@ resource "aws_iam_role_policy_attachment" "aws_node" {
   role       = aws_iam_role.aws_node.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   depends_on = [aws_iam_role.aws_node]
+}
+
+# This policy is created for the load balancer controller.
+resource "aws_iam_policy" "AWSLoadBalancerControllerIAMPolicy" {
+  policy = file("policies/load-balancer.json")
+}
+
+# We create an IAM role for the load balancer controller.
+# We create an IAM role for the open ID connect.
+resource "aws_iam_role" "AmazonEKSLoadBalancerControllerRole" {
+  name = "AmazonEKSLoadBalancerControllerRole"
+  assume_role_policy = jsonencode(
+    {
+      "Version" : "2012-10-17",
+      "Statement" : [
+        {
+          "Effect" : "Allow",
+          "Principal" : {
+            "Federated" : aws_iam_openid_connect_provider.cluster.arn
+          },
+          "Action" : "sts:AssumeRoleWithWebIdentity",
+          "Condition" : {
+            "StringEquals" : {
+              format("%s:%s", replace(aws_iam_openid_connect_provider.cluster.url, "https://", ""), "aud") : "sts.amazonaws.com",
+              format("%s:%s", replace(aws_iam_openid_connect_provider.cluster.url, "https://", ""), "sub") : "system:serviceaccount:kube-system:aws-load-balancer-controller"
+            }
+          }
+        }
+      ]
+    }
+  )
+  depends_on = [aws_iam_openid_connect_provider.cluster]
+}
+
+resource "aws_iam_role_policy_attachment" "AmazonEKSLoadBalancerControllerRoleAttachement" {
+  role       = aws_iam_role.AmazonEKSLoadBalancerControllerRole.name
+  policy_arn = aws_iam_policy.AWSLoadBalancerControllerIAMPolicy.arn
+  depends_on = [
+    aws_iam_role.AmazonEKSLoadBalancerControllerRole
+  ]
+}
+
+
+resource "kubectl_manifest" "test" {
+  yaml_body = file("${path.module}/kubectls/aws-load-balancer-controller-service-account.yaml")
 }
