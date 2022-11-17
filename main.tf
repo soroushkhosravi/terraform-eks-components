@@ -266,3 +266,13 @@ resource "kubectl_manifest" "test" {
 
 # For being able to have "AWS Load balancer controller" in your cluster, do the steps of 5 and 6 of the following link:
 # https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
+# In fact, you can do the following steps after running terraform apply and haing the EKS cluster ready.
+# 1. Updating EKS configuration for having access to the cluster by the following commmand:
+# aws eks update-kubeconfig --name my-cluster --region us-west-2
+# 2. Run the following command to install cert manager in the cluster:
+# kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.5.4/cert-manager.yaml
+# 3. Run the following coomand:
+# kubectl apply -f kubectls/v2_4_4_full.yaml
+# 4. Runnning the following command:
+# kubectl apply -f kubectls/v2_4_4_ingclass.yaml
+
