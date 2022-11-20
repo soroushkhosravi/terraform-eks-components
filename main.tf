@@ -10,6 +10,10 @@ terraform {
       source  = "gavinbunney/kubectl"
       version = ">= 1.7.0"
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = ">= 2.4"
+    }
   }
   # We define a backend for the terraform state file. This saves all the changes related to the AWS elements.
   backend "s3" {
@@ -24,6 +28,27 @@ provider "kubectl" {
   host                   = aws_eks_cluster.example.endpoint
   cluster_ca_certificate = base64decode(aws_eks_cluster.example.certificate_authority[0].data)
   token                  = data.aws_eks_cluster_auth.cluster-auth.token
+}
+
+provider "kubernetes" {
+  host                   = aws_eks_cluster.example.endpoint
+  cluster_ca_certificate = base64decode(aws_eks_cluster.example.certificate_authority[0].data)
+  #exec {
+  #api_version = "client.authentication.k8s.io/v1beta1"
+  #args        = ["eks", "get-token", "--cluster-name", data.aws_eks_cluster.example.name]
+  #command     = "aws"
+  #}
+  token = data.aws_eks_cluster_auth.cluster-auth.token
+}
+
+resource "kubernetes_namespace" "example" {
+  metadata {
+    annotations = {
+      name = "housing-api"
+    }
+
+    name = "housing-api"
+  }
 }
 
 data "aws_eks_cluster_auth" "cluster-auth" {
@@ -186,7 +211,7 @@ resource "aws_iam_role" "aws_node" {
         "Action" : "sts:AssumeRoleWithWebIdentity",
         "Condition" : {
           "StringEquals" : {
-            format("%s:%s", replace(aws_iam_openid_connect_provider.cluster.url, "https://", ""), "sub") : "system:serviceaccount:default:housing-api"
+            format("%s:%s", replace(aws_iam_openid_connect_provider.cluster.url, "https://", ""), "sub") : "system:serviceaccount:housing-api:housing-api"
           }
         }
       }
@@ -195,7 +220,7 @@ resource "aws_iam_role" "aws_node" {
   tags = merge(
     {
       "ServiceAccountName"      = "aws-node"
-      "ServiceAccountNameSpace" = "default"
+      "ServiceAccountNameSpace" = "housing-api"
     }
   )
   inline_policy {
@@ -275,4 +300,7 @@ resource "kubectl_manifest" "test" {
 # kubectl apply -f kubectls/v2_4_4_full.yaml
 # 4. Runnning the following command:
 # kubectl apply -f kubectls/v2_4_4_ingclass.yaml
+# 5. Run the following command to make sure the load balancer controller is installed properly:
+# kubectl get deployment -n kube-system aws-load-balancer-controller
+
 
