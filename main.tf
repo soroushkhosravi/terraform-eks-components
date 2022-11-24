@@ -289,6 +289,25 @@ resource "kubectl_manifest" "test" {
   yaml_body = file("${path.module}/kubectls/aws-load-balancer-controller-service-account.yaml")
 }
 
+resource "aws_ecr_repository" "housing-api" {
+  name                 = "housing-api"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
+resource "aws_ecr_repository" "housing-api-nginx" {
+  name                 = "housing-api-nginx"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
+
 # For being able to have "AWS Load balancer controller" in your cluster, do the steps of 5 and 6 of the following link:
 # https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
 # In fact, you can do the following steps after running terraform apply and haing the EKS cluster ready.
