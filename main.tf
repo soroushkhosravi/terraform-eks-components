@@ -292,6 +292,7 @@ resource "kubectl_manifest" "test" {
 resource "aws_ecr_repository" "housing-api" {
   name                 = "housing-api"
   image_tag_mutability = "MUTABLE"
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = true
@@ -301,6 +302,7 @@ resource "aws_ecr_repository" "housing-api" {
 resource "aws_ecr_repository" "housing-api-nginx" {
   name                 = "housing-api-nginx"
   image_tag_mutability = "MUTABLE"
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = true
