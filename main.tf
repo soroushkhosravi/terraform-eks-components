@@ -24,23 +24,23 @@ terraform {
   required_version = ">= 1.2.0"
 }
 
+# The provider to be able to connect to our EKS cluster.
 provider "kubectl" {
   host                   = aws_eks_cluster.example.endpoint
   cluster_ca_certificate = base64decode(aws_eks_cluster.example.certificate_authority[0].data)
   token                  = data.aws_eks_cluster_auth.cluster-auth.token
 }
 
+# This provider enables us to create different parts in our eks cluster.
 provider "kubernetes" {
   host                   = aws_eks_cluster.example.endpoint
   cluster_ca_certificate = base64decode(aws_eks_cluster.example.certificate_authority[0].data)
-  #exec {
-  #api_version = "client.authentication.k8s.io/v1beta1"
-  #args        = ["eks", "get-token", "--cluster-name", data.aws_eks_cluster.example.name]
-  #command     = "aws"
-  #}
   token = data.aws_eks_cluster_auth.cluster-auth.token
 }
 
+# Create a namespace in our kubernetes cluster.
+# How does this realise which cluster to create the namespace in it?
+# It realises it from the kubernetes provider that we have provided.
 resource "kubernetes_namespace" "example" {
   metadata {
     annotations = {
@@ -51,10 +51,12 @@ resource "kubernetes_namespace" "example" {
   }
 }
 
+# This is used in the kubernetes provider to connect to the cluster.
 data "aws_eks_cluster_auth" "cluster-auth" {
   name = aws_eks_cluster.example.name
 }
 
+# This provider has a region set in it. The KEY and SECRET come from the environment variables for this provider.
 provider "aws" {
   # We define the region of aws here.
   region = "us-west-2"
@@ -289,6 +291,7 @@ resource "kubectl_manifest" "test" {
   yaml_body = file("${path.module}/kubectls/aws-load-balancer-controller-service-account.yaml")
 }
 
+# Creates a ECR repository for the housing api project to save gunicorn images.
 resource "aws_ecr_repository" "housing-api" {
   name                 = "housing-api"
   image_tag_mutability = "MUTABLE"
@@ -299,6 +302,7 @@ resource "aws_ecr_repository" "housing-api" {
   }
 }
 
+# Creates a ECR repository for the housing api project to save the nginx images.
 resource "aws_ecr_repository" "housing-api-nginx" {
   name                 = "housing-api-nginx"
   image_tag_mutability = "MUTABLE"
