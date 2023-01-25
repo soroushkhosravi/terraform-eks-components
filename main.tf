@@ -328,4 +328,13 @@ resource "aws_ecr_repository" "housing-api-nginx" {
 # 5. Run the following command to make sure the load balancer controller is installed properly:
 # kubectl get deployment -n kube-system aws-load-balancer-controller
 
+# In order to install and use DataDog for seeing the cluster's logs, containers' logs and application traces, do the following:
+# 1. Install Helm
+# 2. Run the following commands to hae proper helm release:
+# helm repo add datadog https://helm.datadoghq.com
+# helm repo update
+# 3. Run the following command to install the dd agent on the cluster. The DATADOG_API_KEY can be grabbed from dd website
+# and the RELEASE_NAME is whatever you want to name the release.
+# helm install <RELEASE_NAME> -f dd/values.yaml  --set datadog.apiKey=<DATADOG_API_KEY> datadog/datadog --set targetSystem=<TARGET_SYSTEM>
+
 
