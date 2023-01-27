@@ -35,7 +35,15 @@ provider "kubectl" {
 provider "kubernetes" {
   host                   = aws_eks_cluster.example.endpoint
   cluster_ca_certificate = base64decode(aws_eks_cluster.example.certificate_authority[0].data)
-  token = data.aws_eks_cluster_auth.cluster-auth.token
+  token                  = data.aws_eks_cluster_auth.cluster-auth.token
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = aws_eks_cluster.example.endpoint
+    cluster_ca_certificate = base64decode(aws_eks_cluster.example.certificate_authority[0].data)
+    token                  = data.aws_eks_cluster_auth.cluster-auth.token
+  }
 }
 
 # Create a namespace in our kubernetes cluster.
@@ -310,6 +318,61 @@ resource "aws_ecr_repository" "housing-api-nginx" {
 
   image_scanning_configuration {
     scan_on_push = true
+  }
+}
+
+data "kubectl_path_documents" "cert-manager-manifests" {
+  pattern = "${path.module}/kubectls/cert_manager.yaml"
+}
+
+data "kubectl_path_documents" "v2-4-4-full-manifests" {
+  pattern = "${path.module}/kubectls/v2_4_4_full.yaml"
+}
+
+data "kubectl_path_documents" "v2-4-4-ingclass-manifests" {
+  pattern = "${path.module}/kubectls/v2_4_4_ingclass.yaml"
+}
+
+resource "kubectl_manifest" "cert-manager" {
+  count           = length(data.kubectl_path_documents.cert-manager-manifests.documents)
+  yaml_body       = element(data.kubectl_path_documents.cert-manager-manifests.documents, count.index)
+  validate_schema = false
+}
+
+resource "kubectl_manifest" "v2-4-4-full" {
+  count     = length(data.kubectl_path_documents.v2-4-4-full-manifests.documents)
+  yaml_body = element(data.kubectl_path_documents.v2-4-4-full-manifests.documents, count.index)
+  depends_on = [
+    kubectl_manifest.cert-manager
+  ]
+}
+
+resource "kubectl_manifest" "v2-4-4-ingclass" {
+  count     = length(data.kubectl_path_documents.v2-4-4-ingclass-manifests.documents)
+  yaml_body = element(data.kubectl_path_documents.v2-4-4-ingclass-manifests.documents, count.index)
+  depends_on = [
+    kubectl_manifest.v2-4-4-full
+  ]
+}
+
+resource "helm_release" "datadog" {
+  name       = "my-datadog-release"
+  repository = "https://helm.datadoghq.com"
+  chart      = "datadog"
+
+  values = [
+    file("${path.module}/dd/values.yaml")
+  ]
+
+
+  set {
+    name  = "datadog.apiKey"
+    value = "2d26cb60e36c9062e2385d4aebcae3c4"
+  }
+
+  set {
+    name  = "targetSystem"
+    value = "linux"
   }
 }
 
