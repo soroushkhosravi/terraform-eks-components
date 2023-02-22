@@ -355,6 +355,7 @@ resource "kubectl_manifest" "v2-4-4-ingclass" {
   ]
 }
 
+/*
 resource "helm_release" "datadog" {
   name       = "my-datadog-release"
   repository = "https://helm.datadoghq.com"
@@ -375,6 +376,7 @@ resource "helm_release" "datadog" {
     value = "linux"
   }
 }
+*/
 
 
 # For being able to have "AWS Load balancer controller" in your cluster, do the steps of 5 and 6 of the following link:
