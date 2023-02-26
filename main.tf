@@ -169,11 +169,18 @@ resource "aws_iam_role_policy_attachment" "eks-node-policy-attachment-3" {
   ]
 }
 
+# Getting the last version of the suggested amazon linux 2 eks ami version.
+data "aws_ssm_parameter" "eks_ami_release_version" {
+  name = "/aws/service/eks/optimized-ami/${aws_eks_cluster.example.version}/amazon-linux-2/recommended/release_version"
+}
+
 # We define a node group for our Nodes. We assign the IAM ole to it.
 resource "aws_eks_node_group" "my-nodegroup" {
   cluster_name    = aws_eks_cluster.example.name
   node_group_name = "my-nodegroup"
   node_role_arn   = aws_iam_role.myAmazonEKSNodeRole.arn
+  version         = aws_eks_cluster.example.version
+  release_version = nonsensitive(data.aws_ssm_parameter.eks_ami_release_version.value)
   subnet_ids      = slice(split(",", aws_cloudformation_stack.my-eks-vpc-stack.outputs.SubnetIds), 0, 2)
 
   scaling_config {
