@@ -59,6 +59,16 @@ resource "kubernetes_namespace" "example" {
   }
 }
 
+resource "kubernetes_namespace" "my-react-app" {
+  metadata {
+    annotations = {
+      name = "my-react-app"
+    }
+
+    name = "my-react-app"
+  }
+}
+
 # This is used in the kubernetes provider to connect to the cluster.
 data "aws_eks_cluster_auth" "cluster-auth" {
   name = aws_eks_cluster.example.name
@@ -185,7 +195,7 @@ resource "aws_eks_node_group" "my-nodegroup" {
 
   scaling_config {
     desired_size = 2
-    max_size     = 2
+    max_size     = 5
     min_size     = 2
   }
 
@@ -309,6 +319,16 @@ resource "kubectl_manifest" "test" {
 # Creates a ECR repository for the housing api project to save gunicorn images.
 resource "aws_ecr_repository" "housing-api" {
   name                 = "housing-api"
+  image_tag_mutability = "MUTABLE"
+  force_delete         = true
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
+resource "aws_ecr_repository" "my-react-app" {
+  name                 = "my-react-app"
   image_tag_mutability = "MUTABLE"
   force_delete         = true
 
