@@ -46,29 +46,6 @@ provider "helm" {
   }
 }
 
-# Create a namespace in our kubernetes cluster.
-# How does this realise which cluster to create the namespace in it?
-# It realises it from the kubernetes provider that we have provided.
-resource "kubernetes_namespace" "example" {
-  metadata {
-    annotations = {
-      name = "housing-api"
-    }
-
-    name = "housing-api"
-  }
-}
-
-resource "kubernetes_namespace" "my-react-app" {
-  metadata {
-    annotations = {
-      name = "my-react-app"
-    }
-
-    name = "my-react-app"
-  }
-}
-
 # This is used in the kubernetes provider to connect to the cluster.
 data "aws_eks_cluster_auth" "cluster-auth" {
   name = aws_eks_cluster.example.name
@@ -316,36 +293,16 @@ resource "kubectl_manifest" "test" {
   yaml_body = file("${path.module}/kubectls/aws-load-balancer-controller-service-account.yaml")
 }
 
-# Creates a ECR repository for the housing api project to save gunicorn images.
-resource "aws_ecr_repository" "housing-api" {
-  name                 = "housing-api"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
+module "housing_api_service" {
+  source                  = "./modules/serviceElements"
+  app_ecr_repository_name = "housing-api"
+  needNginx               = true
 }
 
-resource "aws_ecr_repository" "my-react-app" {
-  name                 = "my-react-app"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-}
-
-# Creates a ECR repository for the housing api project to save the nginx images.
-resource "aws_ecr_repository" "housing-api-nginx" {
-  name                 = "housing-api-nginx"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
+module "my_react_app" {
+  source                  = "./modules/serviceElements"
+  app_ecr_repository_name = "my-react-app"
+  needNginx               = false
 }
 
 data "kubectl_path_documents" "cert-manager-manifests" {
