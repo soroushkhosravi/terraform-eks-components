@@ -3,18 +3,18 @@ variable "app_name" {
   type        = string
 }
 
-variable "needNginx"{
+variable "needNginx" {
   description = "Do we need to create an nginx ecr repository."
   type        = bool
   default     = false
 }
 
-variable "cluster_url"{
+variable "cluster_url" {
   description = "The url of the EKS cluster."
   type        = string
 }
 
-variable "cluster_arn"{
+variable "cluster_arn" {
   description = "The arn of the eks cluster."
   type        = string
 }
