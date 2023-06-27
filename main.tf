@@ -295,13 +295,13 @@ resource "kubectl_manifest" "test" {
 
 module "housing_api_service" {
   source                  = "./modules/serviceElements"
-  app_ecr_repository_name = "housing-api"
+  app_name = "housing-api"
   needNginx               = true
 }
 
 module "my_react_app" {
   source                  = "./modules/serviceElements"
-  app_ecr_repository_name = "my-react-app"
+  app_name = "my-react-app"
   needNginx               = false
 }
 

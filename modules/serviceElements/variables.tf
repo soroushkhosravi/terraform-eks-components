@@ -1,4 +1,4 @@
-variable "app_ecr_repository_name" {
+variable "app_name" {
   description = "Name of ecr repository to push the nginx images to."
   type        = string
 }

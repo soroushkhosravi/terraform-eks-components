@@ -1,7 +1,7 @@
 # Creates a ECR repository for the housing api project to save the nginx images.
 resource "aws_ecr_repository" "nginx-ecr-repository" {
   count                = var.needNginx ? 1 : 0
-  name                 = format("%s-nginx", var.app_ecr_repository_name)
+  name                 = format("%s-nginx", var.app_name)
   image_tag_mutability = "MUTABLE"
   force_delete         = true
 
@@ -12,7 +12,7 @@ resource "aws_ecr_repository" "nginx-ecr-repository" {
 
 # Creates a ECR repository for the housing api project to save gunicorn images.
 resource "aws_ecr_repository" "app-ecr-repository" {
-  name                 = var.app_ecr_repository_name
+  name                 = var.app_name
   image_tag_mutability = "MUTABLE"
   force_delete         = true
 
@@ -27,9 +27,10 @@ resource "aws_ecr_repository" "app-ecr-repository" {
 resource "kubernetes_namespace" "example" {
   metadata {
     annotations = {
-      name = var.app_ecr_repository_name
+      name = var.app_name
     }
 
-    name = var.app_ecr_repository_name
+    name = var.app_name
   }
 }
+
