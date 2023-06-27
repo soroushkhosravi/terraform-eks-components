@@ -8,3 +8,13 @@ variable "needNginx"{
   type        = bool
   default     = false
 }
+
+variable "cluster_url"{
+  description = "The url of the EKS cluster."
+  type        = string
+}
+
+variable "cluster_arn"{
+  description = "The arn of the eks cluster."
+  type        = string
+}

@@ -201,6 +201,7 @@ resource "aws_iam_openid_connect_provider" "cluster" {
   url             = aws_eks_cluster.example.identity.0.oidc.0.issuer
 }
 
+/*
 # We create an IAM role for the open ID connect.
 resource "aws_iam_role" "aws_node" {
   name = "aws-node"
@@ -247,6 +248,7 @@ resource "aws_iam_role_policy_attachment" "aws_node" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   depends_on = [aws_iam_role.aws_node]
 }
+*/
 
 # This policy is created for the load balancer controller.
 resource "aws_iam_policy" "AWSLoadBalancerControllerIAMPolicy" {
@@ -294,15 +296,19 @@ resource "kubectl_manifest" "test" {
 }
 
 module "housing_api_service" {
-  source                  = "./modules/serviceElements"
-  app_name = "housing-api"
-  needNginx               = true
+  source      = "./modules/serviceElements"
+  app_name    = "housing-api"
+  needNginx   = true
+  cluster_url = aws_iam_openid_connect_provider.cluster.url
+  cluster_arn = aws_iam_openid_connect_provider.cluster.arn
 }
 
 module "my_react_app" {
-  source                  = "./modules/serviceElements"
-  app_name = "my-react-app"
-  needNginx               = false
+  source      = "./modules/serviceElements"
+  app_name    = "my-react-app"
+  needNginx   = false
+  cluster_url = aws_iam_openid_connect_provider.cluster.url
+  cluster_arn = aws_iam_openid_connect_provider.cluster.arn
 }
 
 data "kubectl_path_documents" "cert-manager-manifests" {

@@ -34,3 +34,48 @@ resource "kubernetes_namespace" "example" {
   }
 }
 
+resource "aws_iam_role" "aws_node" {
+  name = var.app_name
+  assume_role_policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Principal" : {
+          "Federated" : var.cluster_arn
+        },
+        "Action" : "sts:AssumeRoleWithWebIdentity",
+        "Condition" : {
+          "StringEquals" : {
+            format("%s:%s", replace(var.cluster_url, "https://", ""), "sub") : "system:serviceaccount:housing-api:housing-api"
+          }
+        }
+      }
+    ]
+  })
+  tags = merge(
+    {
+      "ServiceAccountName"      = var.app_name
+      "ServiceAccountNameSpace" = var.app_name
+    }
+  )
+  inline_policy {
+    name = "ssm_full_access_policy"
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Action   = ["ssm:*"]
+          Effect   = "Allow"
+          Resource = "*"
+        },
+      ]
+    })
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "aws_node" {
+  role       = aws_iam_role.aws_node.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  depends_on = [aws_iam_role.aws_node]
+}
