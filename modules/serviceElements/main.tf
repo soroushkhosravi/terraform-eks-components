@@ -47,7 +47,7 @@ resource "aws_iam_role" "aws_node" {
         "Action" : "sts:AssumeRoleWithWebIdentity",
         "Condition" : {
           "StringEquals" : {
-            format("%s:%s", replace(var.cluster_url, "https://", ""), "sub") : "system:serviceaccount:housing-api:housing-api"
+            format("%s:%s", replace(var.cluster_url, "https://", ""), "sub") : format("system:serviceaccount:%s:%s", var.app_name, var.app_name)
           }
         }
       }
